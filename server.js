@@ -64,8 +64,8 @@ function validateTelegramData(initData) {
 }
 
 // ===== API MIDDLEWARE =====
-// Проверка авторизации для API
-app.use('/api/*', (req, res, next) => {
+// Функция для проверки авторизации
+function handleApiAuth(req, res, next) {
     console.log(`📨 API запрос: ${req.method} ${req.url}`);
     
     const authHeader = req.headers.authorization;
@@ -84,7 +84,6 @@ app.use('/api/*', (req, res, next) => {
         return res.status(403).json({ error: 'Invalid signature' });
     }
     
-    // Получаем данные пользователя
     try {
         const params = new URLSearchParams(initData);
         const userStr = params.get('user');
@@ -98,8 +97,12 @@ app.use('/api/*', (req, res, next) => {
     }
     
     next();
-});
+}
 
+// Применяем middleware к конкретным маршрутам (БЕЗ ЗВЕЗДОЧЕК!)
+app.use('/api/check-admin', handleApiAuth);
+app.use('/api/data', handleApiAuth);
+app.use('/api/ton-address', handleApiAuth);
 // ===== API ЭНДПОИНТЫ =====
 
 // Проверка прав админа
