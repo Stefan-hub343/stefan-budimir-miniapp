@@ -17,21 +17,22 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
 // ===== КОНФИГУРАЦИЯ =====
-// Загружаем переменные из .env файла в папке бота
+// Загружаем переменные из .env файла в папке бота (опционально)
 const envPath = path.join(__dirname, '..', 'stefan-budimir-bot', '.env');
 if (fs.existsSync(envPath)) {
     require('dotenv').config({ path: envPath });
 }
 
-const BOT_TOKEN = process.env.BOT_TOKEN;
+// Используем значения по умолчанию, если переменные не заданы
+const BOT_TOKEN = process.env.BOT_TOKEN || 'dummy-token';
 const BIN_ID = process.env.JSONBIN_ID || '69a06fc543b1c97be9a0c7fd';
-const API_KEY = process.env.JSONBIN_KEY;
+const API_KEY = process.env.JSONBIN_KEY || 'dummy-key';
 const ADMIN_ID = parseInt(process.env.ADMIN_ID || '800391069');
 const TON_ADDRESS = process.env.TON_ADDRESS || 'UQBX5kKdfM_OnE3H-HWkgYEIi1AO_xOtJL3_6NK65KQykpWc';
 
 console.log('🚀 Сервер запускается...');
 console.log('📦 BIN_ID:', BIN_ID);
-console.log('📦 API_KEY:', API_KEY ? '✅' : '❌');
+console.log('📦 API_KEY:', API_KEY ? '✅ присутствует' : '❌ отсутствует');
 console.log('👑 ADMIN_ID:', ADMIN_ID);
 
 // ===== ФУНКЦИЯ ПРОВЕРКИ INITDATA =====
@@ -103,6 +104,7 @@ function handleApiAuth(req, res, next) {
 app.use('/api/check-admin', handleApiAuth);
 app.use('/api/data', handleApiAuth);
 app.use('/api/ton-address', handleApiAuth);
+
 // ===== API ЭНДПОИНТЫ =====
 
 // Проверка прав админа
@@ -172,7 +174,7 @@ app.get('/api/ton-address', (req, res) => {
 
 // ===== ВАЖНО: Обработка всех остальных маршрутов =====
 // Это должно быть ПОСЛЕ всех API маршрутов
-app.get('*', (req, res) => {
+app.get('/*', (req, res) => {  // ВАЖНО: пишем '/*', а не '*'
     console.log(`📄 Запрос страницы: ${req.url}`);
     res.sendFile(path.join(__dirname, 'index.html'));
 });
