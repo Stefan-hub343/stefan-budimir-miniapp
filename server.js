@@ -193,3 +193,12 @@ app.listen(PORT, () => {
     console.log(`   - GET  /api/ton-address`);
     console.log('='.repeat(50) + '\n');
 });
+// Экспортируем app для Vercel (ОЧЕНЬ ВАЖНО!)
+module.exports = app;
+
+// Или если хочешь и локально запускать:
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
