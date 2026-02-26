@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="telegram-web-app" content="version=7.0"/>
+    <title>Стефан Будимир | Портфолио</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- TON Connect SDK -->
+    <script src="https://unpkg.com/@tonconnect/ui@2.0.0/dist/tonconnect-ui.min.js"></script>
+</head>
+<body>
+    <div class="app">
+        <!-- Шапка профиля -->
+        <header class="profile-header">
+            <div class="profile-info">
+                <div class="profile-avatar" id="profileAvatar">
+                    <img src="assets/avatar.jpg" alt="Avatar" id="avatar-img" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2270%22 height=%2270%22 viewBox=%220 0 70 70%22><circle cx=%2235%22 cy=%2235%22 r=%2235%22 fill=%22%232481cc%22/><text x=%2235%22 y=%2245%22 font-size=%2230%22 text-anchor=%22middle%22 fill=%22%23ffffff%22>👤</text></svg>'">
+                </div>
+                <div class="profile-text">
+                    <h1 id="profileName">Стефан Будимир</h1>
+                    <p class="profile-bio">Разработчик • Создатель • Творец</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Основной контент -->
+        <main id="content" class="content"></main>
+
+        <!-- Нижняя навигация -->
+        <nav class="tab-bar">
+            <button class="tab-btn active" data-tab="feed">
+                <span class="tab-icon">📱</span>
+                <span class="tab-label">Лента</span>
+            </button>
+            <button class="tab-btn" data-tab="reviews">
+                <span class="tab-icon">💬</span>
+                <span class="tab-label">Отзывы</span>
+            </button>
+            <button class="tab-btn" data-tab="donate">
+                <span class="tab-icon">❤️</span>
+                <span class="tab-label">Donate</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Модальное окно для отзывов -->
+    <div class="modal" id="reviewModal">
+        <div class="modal-content">
+            <h3>Оставить отзыв</h3>
+            <textarea id="reviewText" placeholder="Напишите ваш отзыв..." maxlength="500"></textarea>
+            <div class="modal-actions">
+                <button class="cancel-btn" onclick="closeModal()">Отмена</button>
+                <button class="submit-btn" onclick="submitReview()">Отправить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для комментариев -->
+    <div class="modal" id="commentModal">
+        <div class="modal-content">
+            <h3>Оставить комментарий</h3>
+            <textarea id="commentText" placeholder="Напишите комментарий..." maxlength="300"></textarea>
+            <div class="modal-actions">
+                <button class="cancel-btn" onclick="closeCommentModal()">Отмена</button>
+                <button class="submit-btn" onclick="submitComment()">Отправить</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
