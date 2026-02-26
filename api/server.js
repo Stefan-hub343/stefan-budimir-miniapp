@@ -9,7 +9,7 @@ app.use(express.json());
 
 // Конфигурация
 const BOT_TOKEN = process.env.BOT_TOKEN || 'dummy-token';
-const BIN_ID = process.env.JSONBIN_ID || '69a06fc543b1c97be9a0c7fd';
+const BIN_ID = process.env.JSONBIN_ID;
 const API_KEY = process.env.JSONBIN_KEY || 'dummy-key';
 const ADMIN_ID = parseInt(process.env.ADMIN_ID || '800391069');
 const TON_ADDRESS = process.env.TON_ADDRESS || 'UQBX5kKdfM_OnE3H-HWkgYEIi1AO_xOtJL3_6NK65KQykpWc';
