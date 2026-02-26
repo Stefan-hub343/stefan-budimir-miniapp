@@ -6,13 +6,14 @@ const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Статические файлы из текущей папки
+// ===== СТАТИЧЕСКИЕ ФАЙЛЫ =====
+// Отдаем файлы из текущей папки (index.html, style.css, script.js, assets/)
 app.use(express.static(path.join(__dirname)));
 
 // ===== КОНФИГУРАЦИЯ =====
@@ -62,25 +63,11 @@ function validateTelegramData(initData) {
     }
 }
 
-// ===== API MIDDLEWARE (исправленный синтаксис) =====
-// Вместо '/api/*' используем конкретные маршруты
-app.use('/api/check-admin', (req, res, next) => {
-    handleApiAuth(req, res, next);
-});
-
-app.use('/api/data', (req, res, next) => {
-    handleApiAuth(req, res, next);
-});
-
-app.use('/api/ton-address', (req, res, next) => {
-    handleApiAuth(req, res, next);
-});
-
-// Общая функция обработки авторизации для API
-function handleApiAuth(req, res, next) {
+// ===== API MIDDLEWARE =====
+// Проверка авторизации для API
+app.use('/api/*', (req, res, next) => {
     console.log(`📨 API запрос: ${req.method} ${req.url}`);
     
-    // Для тестирования из браузера пропускаем без проверки
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         console.log('⚠️ Запрос без авторизации (режим разработки)');
@@ -111,7 +98,7 @@ function handleApiAuth(req, res, next) {
     }
     
     next();
-}
+});
 
 // ===== API ЭНДПОИНТЫ =====
 
@@ -180,8 +167,15 @@ app.get('/api/ton-address', (req, res) => {
     res.json({ address: TON_ADDRESS });
 });
 
+// ===== ВАЖНО: Обработка всех остальных маршрутов =====
+// Это должно быть ПОСЛЕ всех API маршрутов
+app.get('*', (req, res) => {
+    console.log(`📄 Запрос страницы: ${req.url}`);
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // ===== ЗАПУСК СЕРВЕРА =====
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log('\n' + '='.repeat(50));
     console.log(`✅ Комбинированный сервер запущен на порту ${PORT}`);
     console.log(`📍 Локальный адрес: http://localhost:${PORT}`);
@@ -193,12 +187,3 @@ app.listen(PORT, () => {
     console.log(`   - GET  /api/ton-address`);
     console.log('='.repeat(50) + '\n');
 });
-// Экспортируем app для Vercel (ОЧЕНЬ ВАЖНО!)
-module.exports = app;
-
-// Или если хочешь и локально запускать:
-if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-}
