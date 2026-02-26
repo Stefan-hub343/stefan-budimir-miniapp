@@ -19,7 +19,7 @@ console.log('🌐 Окружение:', isTelegram ? 'Telegram' : 'Браузе�
 // URL API (теперь на том же порту)
 const API_URL = isLocalhost 
     ? 'http://localhost:3001/api'  // Для локальной разработки
-    : 'https://multihued-likeliest-palma.ngrok-free.dev/api'; // Для продакшена
+    : 'https://stefan-budimir-miniapp.vercel.app/api'; // Для продакшена
 
 console.log('🔗 API URL:', API_URL);
 
@@ -182,7 +182,7 @@ function initTonConnect() {
     
     if (window.TON_CONNECT_UI && !tonConnectUI) {
         try {
-            const APP_URL = 'https://multihued-likeliest-palma.ngrok-free.dev';
+            const APP_URL = 'https://stefan-budimir-miniapp.vercel.app';
             
             // ТВОЙ МАНИФЕСТ НА GITHUB
             const manifestUrl = 'https://gist.githubusercontent.com/Stefan-hub343/40b366445e2118263733988bae7782a7/raw/88006b868a9be7c72ab41ffd6f61e014d7b51711/tonconnect-manifest.json';
