@@ -1,0 +1,44 @@
+# Зависимости - это папка с модулями, она огромная
+node_modules/
+package-lock.json
+
+# Файлы с секретами - НИКОГДА не должны попасть в Git
+.env
+.env.local
+.env.production
+.env.development
+
+# Системные файлы Windows
+Thumbs.db
+desktop.ini
+*.log
+
+# Системные файлы macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Логи и отладочные файлы
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.pid
+*.seed
+*.pid.lock
+
+# Временные файлы
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Coverage (если будут тесты)
+coverage/
+.nyc_output/
+
+# IDE (настройки редакторов)
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
