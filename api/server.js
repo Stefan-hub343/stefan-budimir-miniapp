@@ -44,10 +44,13 @@ function validateTelegramData(initData) {
     }
 }
 
-// Middleware для проверки авторизации
-app.use('/api/*', (req, res, next) => {
+// Функция для проверки авторизации
+function handleApiAuth(req, res, next) {
+    console.log(`📨 API запрос: ${req.method} ${req.url}`);
+    
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        console.log('⚠️ Запрос без авторизации');
         req.isAdmin = false;
         return next();
     }
@@ -56,6 +59,7 @@ app.use('/api/*', (req, res, next) => {
     const isValid = validateTelegramData(initData);
     
     if (!isValid) {
+        console.log('❌ Недействительная подпись initData');
         return res.status(403).json({ error: 'Invalid signature' });
     }
     
@@ -65,11 +69,17 @@ app.use('/api/*', (req, res, next) => {
         if (userStr) {
             req.user = JSON.parse(decodeURIComponent(userStr));
             req.isAdmin = req.user.id === ADMIN_ID;
+            console.log(`👤 Пользователь: ${req.user.id} (admin: ${req.isAdmin})`);
         }
     } catch (e) {}
     
     next();
-});
+}
+
+// Применяем middleware к конкретным маршрутам
+app.use('/api/check-admin', handleApiAuth);
+app.use('/api/data', handleApiAuth);
+app.use('/api/ton-address', handleApiAuth);
 
 // API эндпоинты
 app.get('/api/check-admin', (req, res) => {
@@ -77,18 +87,28 @@ app.get('/api/check-admin', (req, res) => {
 });
 
 app.get('/api/data', async (req, res) => {
+    console.log('📥 GET /api/data called');
     try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
             headers: { 'X-Access-Key': API_KEY }
         });
+        
+        if (!response.ok) {
+            throw new Error(`JSONBin error: ${response.status}`);
+        }
+        
         const data = await response.json();
+        console.log('✅ Data received, posts:', data.record.posts?.length);
         res.json(data.record);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to load data' });
+        console.error('❌ Error:', error.message);
+        res.status(500).json({ error: error.message });
     }
 });
 
 app.post('/api/data', async (req, res) => {
+    console.log('📤 POST /api/data called');
+    
     if (!req.isAdmin) {
         return res.status(403).json({ error: 'Admin only' });
     }
@@ -104,6 +124,7 @@ app.post('/api/data', async (req, res) => {
         });
         res.json({ success: true });
     } catch (error) {
+        console.error('❌ Error:', error.message);
         res.status(500).json({ error: 'Failed to save' });
     }
 });
