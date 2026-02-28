@@ -10,16 +10,17 @@ const initDataUnsafe = tg.initDataUnsafe;
 // Определяем окружение
 const isTelegram = !!initData;
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const isVercel = !isLocalhost && !isTelegram && window.location.hostname.includes('vercel.app');
 
 console.log('📦 initData available:', !!initData);
 console.log('👤 initDataUnsafe user:', initDataUnsafe?.user);
 console.log('📱 Версия Telegram:', tg.version);
-console.log('🌐 Окружение:', isTelegram ? 'Telegram' : 'Браузер');
+console.log('🌐 Окружение:', isTelegram ? 'Telegram' : (isVercel ? 'Vercel Dev' : 'Браузер'));
 
-// URL API (теперь на том же порту)
+// URL API
 const API_URL = isLocalhost 
-    ? 'http://localhost:3001/api'  // Для локальной разработки
-    : 'https://stefan-budimir-miniapp.vercel.app/api'; // Для продакшена
+    ? 'http://localhost:3001/api'
+    : 'https://stefan-budimir-miniapp.vercel.app/api';
 
 console.log('🔗 API URL:', API_URL);
 
@@ -30,6 +31,14 @@ let posts = [];
 let reviews = [];
 let adminMode = false;
 let isAdmin = false;
+
+// === РЕЖИМ РАЗРАБОТКИ ===
+const DEV_USER = {
+    id: 800391069,
+    first_name: 'Стефан',
+    last_name: 'Будимир',
+    username: 'stefan_budimir_dev'
+};
 
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
@@ -42,9 +51,10 @@ function getHeaders() {
     // Если есть initData, отправляем его
     if (initData) {
         headers['Authorization'] = 'Bearer ' + initData;
-    } else if (isLocalhost) {
-        // Для локальной разработки можно использовать тестовый режим
+    } else if (isLocalhost || isVercel) {
+        // Для разработки используем тестовый режим
         console.log('⚠️ Режим разработки: запрос без initData');
+        headers['X-Dev-Mode'] = 'true';
     }
     
     return headers;
@@ -52,7 +62,17 @@ function getHeaders() {
 
 // === ПРОВЕРКА ПРАВ ===
 async function checkAdminStatus() {
-    if (!initData && !isLocalhost) {
+    if (isLocalhost || isVercel) {
+        // В режиме разработки считаем себя админом
+        isAdmin = true;
+        console.log('👑 Режим разработки: Админ');
+        if (currentTab === 'feed' || currentTab === 'reviews') {
+            renderCurrentTab();
+        }
+        return;
+    }
+    
+    if (!initData) {
         console.log('❌ Нет initData (не в Telegram)');
         return;
     }
@@ -116,6 +136,30 @@ async function loadData() {
                     text: 'Тестовый пост для браузера',
                     likes: 5,
                     likedBy: [],
+                    comments: [
+                        {
+                            id: 101,
+                            author: {
+                                id: 2,
+                                name: 'Тестовый пользователь',
+                                username: 'test_user'
+                            },
+                            date: new Date().toISOString(),
+                            text: 'Тестовый комментарий'
+                        }
+                    ]
+                },
+                {
+                    id: 2,
+                    author: {
+                        id: 1,
+                        name: 'Стефан Будимир',
+                        username: 'stefan_budimir'
+                    },
+                    date: new Date().toISOString(),
+                    text: 'Еще один тестовый пост',
+                    likes: 3,
+                    likedBy: [],
                     comments: []
                 }
             ];
@@ -124,11 +168,22 @@ async function loadData() {
                     id: 1,
                     author: {
                         id: 2,
-                        name: 'Тестовый пользователь',
-                        username: 'test'
+                        name: 'Анна Петрова',
+                        username: 'anna_p'
                     },
                     date: new Date().toISOString(),
-                    text: 'Тестовый отзыв',
+                    text: 'Отличное приложение!',
+                    rating: 5
+                },
+                {
+                    id: 2,
+                    author: {
+                        id: 3,
+                        name: 'Михаил Сидоров',
+                        username: 'mikhail_s'
+                    },
+                    date: new Date().toISOString(),
+                    text: 'Очень удобно и красиво',
                     rating: 5
                 }
             ];
@@ -140,9 +195,9 @@ async function loadData() {
 
 // === СОХРАНЕНИЕ ДАННЫХ ===
 async function saveData() {
-    // В браузере не сохраняем
-    if (!isTelegram && !isLocalhost) {
-        console.log('⚠️ Сохранение только в Telegram');
+    // В браузере сохраняем, но без initData
+    if (!isTelegram && !isLocalhost && !isVercel) {
+        console.log('⚠️ Сохранение только в Telegram или режиме разработки');
         return false;
     }
     
@@ -167,7 +222,6 @@ async function saveData() {
     }
 }
 
-
 // === TON CONNECT ===
 let tonConnectUI = null;
 let connectedWallet = null;
@@ -184,7 +238,6 @@ function initTonConnect() {
         try {
             const APP_URL = 'https://stefan-budimir-miniapp.vercel.app';
             
-            // ТВОЙ МАНИФЕСТ НА GITHUB
             const manifestUrl = 'https://gist.githubusercontent.com/Stefan-hub343/40b366445e2118263733988bae7782a7/raw/88006b868a9be7c72ab41ffd6f61e014d7b51711/tonconnect-manifest.json';
             
             tonConnectUI = new window.TON_CONNECT_UI.TonConnectUI({
@@ -262,7 +315,8 @@ window.disconnectWallet = async function() {
 
 // Подключить кошелек и отправить донат
 window.connectWalletAndDonate = async function(amount) {
-    if (!user) {
+    const currentUser = isTelegram ? initDataUnsafe?.user : DEV_USER;
+    if (!currentUser) {
         tg.showAlert('Войдите в Telegram, чтобы отправить донат');
         return;
     }
@@ -294,7 +348,7 @@ window.connectWalletAndDonate = async function(amount) {
         
         // Получаем адрес для доната с сервера
         const tonAddressResponse = await fetch(`${API_URL}/ton-address`, {
-            headers: { 'Authorization': 'Bearer ' + initData }
+            headers: getHeaders()
         });
         const { address } = await tonAddressResponse.json();
         
@@ -373,7 +427,9 @@ function renderFeed() {
     }
 
     posts.forEach(post => {
-        const isLiked = initDataUnsafe?.user && post.likedBy && post.likedBy.includes(initDataUnsafe.user.id);
+        const currentUser = isTelegram ? initDataUnsafe?.user : DEV_USER;
+        const isLiked = currentUser && post.likedBy && post.likedBy.includes(currentUser.id);
+        
         const postDiv = document.createElement('div');
         postDiv.className = 'feed-post';
         
@@ -619,8 +675,8 @@ window.toggleComments = function(postId) {
 };
 
 window.toggleLike = async function(postId) {
-    const user = initDataUnsafe?.user;
-    if (!user) {
+    const currentUser = isTelegram ? initDataUnsafe?.user : DEV_USER;
+    if (!currentUser) {
         tg.showAlert('Войдите в Telegram, чтобы ставить лайки');
         return;
     }
@@ -628,9 +684,9 @@ window.toggleLike = async function(postId) {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
     
-    const likedIndex = post.likedBy.indexOf(user.id);
+    const likedIndex = post.likedBy.indexOf(currentUser.id);
     if (likedIndex === -1) {
-        post.likedBy.push(user.id);
+        post.likedBy.push(currentUser.id);
         post.likes++;
     } else {
         post.likedBy.splice(likedIndex, 1);
@@ -640,7 +696,7 @@ window.toggleLike = async function(postId) {
     document.getElementById(`likes-${postId}`).textContent = post.likes;
     const likeBtn = document.querySelector(`[onclick="toggleLike(${postId})"]`);
     if (likeBtn) {
-        likeBtn.classList.toggle('liked', post.likedBy.includes(user.id));
+        likeBtn.classList.toggle('liked', post.likedBy.includes(currentUser.id));
     }
     
     await saveData();
@@ -648,7 +704,8 @@ window.toggleLike = async function(postId) {
 };
 
 window.showCommentModal = function(postId) {
-    if (!initDataUnsafe?.user) {
+    const currentUser = isTelegram ? initDataUnsafe?.user : DEV_USER;
+    if (!currentUser) {
         tg.showAlert('Войдите в Telegram, чтобы комментировать');
         return;
     }
@@ -658,8 +715,8 @@ window.showCommentModal = function(postId) {
 };
 
 window.submitComment = async function() {
-    const user = initDataUnsafe?.user;
-    if (!user) {
+    const currentUser = isTelegram ? initDataUnsafe?.user : DEV_USER;
+    if (!currentUser) {
         tg.showAlert('Войдите в Telegram, чтобы комментировать');
         return;
     }
@@ -676,9 +733,9 @@ window.submitComment = async function() {
     const newComment = {
         id: Date.now(),
         author: {
-            id: user.id,
-            name: user.first_name + (user.last_name ? ' ' + user.last_name : ''),
-            username: user.username
+            id: currentUser.id,
+            name: currentUser.first_name + (currentUser.last_name ? ' ' + currentUser.last_name : ''),
+            username: currentUser.username
         },
         date: new Date().toISOString(),
         text: text
@@ -751,7 +808,8 @@ function renderReviews() {
 }
 
 window.showReviewModal = function() {
-    if (!initDataUnsafe?.user) {
+    const currentUser = isTelegram ? initDataUnsafe?.user : DEV_USER;
+    if (!currentUser) {
         tg.showAlert('Войдите в Telegram, чтобы оставить отзыв');
         return;
     }
@@ -760,8 +818,8 @@ window.showReviewModal = function() {
 };
 
 window.submitReview = async function() {
-    const user = initDataUnsafe?.user;
-    if (!user) {
+    const currentUser = isTelegram ? initDataUnsafe?.user : DEV_USER;
+    if (!currentUser) {
         tg.showAlert('Войдите в Telegram, чтобы оставить отзыв');
         return;
     }
@@ -775,9 +833,9 @@ window.submitReview = async function() {
     const newReview = {
         id: Date.now(),
         author: {
-            id: user.id,
-            name: user.first_name + (user.last_name ? ' ' + user.last_name : ''),
-            username: user.username
+            id: currentUser.id,
+            name: currentUser.first_name + (currentUser.last_name ? ' ' + currentUser.last_name : ''),
+            username: currentUser.username
         },
         date: new Date().toISOString(),
         text: text,
@@ -801,7 +859,7 @@ window.closeModal = function() {
     document.getElementById('reviewText').value = '';
 };
 
-// === DONATE С TON CONNECT ===
+// === DONATE ===
 function renderDonate() {
     const container = document.createElement('div');
     container.className = 'donate-container';
@@ -839,7 +897,6 @@ function renderDonate() {
                     Поддерживает Tonkeeper, Wallet в Telegram, MyTonWallet
                 </p>
                 
-                <!-- Кнопка Connect wallet по центру -->
                 <div style="display: flex; justify-content: center; width: 100%; margin: 20px 0;">
                     <div id="ton-connect-button" style="width: 100%; max-width: 280px;"></div>
                 </div>
@@ -863,7 +920,7 @@ function renderDonate() {
     return container;
 }
 
-// === ДОНАТ ЧЕРЕЗ TELEGRAM STARS (ОТКЛЮЧЕНО) ===
+// === ДОНАТ ЧЕРЕЗ TELEGRAM STARS ===
 window.donateWithStars = function(amount) {
     tg.showAlert('⭐ Функция доната через Stars появится в следующем обновлении!');
 };
@@ -918,7 +975,6 @@ window.switchTab = function(tabId) {
 
 // Инициализация при загрузке
 document.addEventListener('DOMContentLoaded', () => {
-    // Сначала проверяем права, потом загружаем данные
     checkAdminStatus().then(() => {
         loadData();
     });
