@@ -58,6 +58,7 @@ function handleApiAuth(req, res, next) {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         console.log('⚠️ Запрос без авторизации');
         req.isAdmin = false;
+        req.user = null;
         return next();
     }
     
@@ -71,7 +72,8 @@ function handleApiAuth(req, res, next) {
             return res.status(403).json({ error: 'Invalid signature' });
         } else {
             console.log('⚠️ Пропускаем в режиме разработки');
-            req.isAdmin = true;
+            req.isAdmin = false;
+            req.user = null;
             return next();
         }
     }
@@ -83,8 +85,13 @@ function handleApiAuth(req, res, next) {
             req.user = JSON.parse(decodeURIComponent(userStr));
             req.isAdmin = req.user.id === ADMIN_ID;
             console.log(`👤 Пользователь: ${req.user.id} (admin: ${req.isAdmin})`);
+        } else {
+            req.isAdmin = false;
         }
-    } catch (e) {}
+    } catch (e) {
+        console.log('⚠️ Ошибка парсинга user:', e);
+        req.isAdmin = false;
+    }
     
     next();
 }
@@ -98,6 +105,12 @@ app.use('/api/ton-address', handleApiAuth);
 
 // Проверка прав админа
 app.get('/api/check-admin', (req, res) => {
+    // В режиме разработки (без initData) всегда false
+    if (!req.user) {
+        console.log('👑 Проверка админа: нет пользователя -> false');
+        return res.json({ isAdmin: false });
+    }
+    console.log(`👑 Проверка админа: ${req.isAdmin ? 'ДА' : 'НЕТ'}`);
     res.json({ isAdmin: req.isAdmin || false });
 });
 
@@ -122,13 +135,11 @@ app.get('/api/data', async (req, res) => {
     }
 });
 
-// Сохранение данных - ДОСТУПНО ВСЕМ ПОЛЬЗОВАТЕЛЯМ!
+// Сохранение данных - ДОСТУПНО ВСЕМ ПОЛЬЗОВАТЕЛЯМ (лайки, комментарии, отзывы)
 app.post('/api/data', async (req, res) => {
     console.log('📤 POST /api/data called');
     
-    // Проверка на админа УБРАНА - теперь все могут сохранять
-    // Любой пользователь может ставить лайки, писать комментарии и отзывы
-    
+    // Проверка на админа НЕ НУЖНА - все могут сохранять
     try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
             method: 'PUT',

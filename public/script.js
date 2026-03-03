@@ -62,10 +62,20 @@ function getHeaders() {
 
 // === ПРОВЕРКА ПРАВ ===
 async function checkAdminStatus() {
-    if (isLocalhost || isVercel) {
-        // В режиме разработки считаем себя админом
+    if (isLocalhost) {
+        // Только локально считаем себя админом для разработки
         isAdmin = true;
-        console.log('👑 Режим разработки: Админ');
+        console.log('👑 Режим локальной разработки: Админ');
+        if (currentTab === 'feed' || currentTab === 'reviews') {
+            renderCurrentTab();
+        }
+        return;
+    }
+    
+    if (isVercel) {
+        // На Vercel в браузере - НЕ админ
+        isAdmin = false;
+        console.log('👑 Браузерный режим: не админ');
         if (currentTab === 'feed' || currentTab === 'reviews') {
             renderCurrentTab();
         }
