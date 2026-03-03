@@ -1157,3 +1157,17 @@ td {
     font-size: 14px;
     color: var(--hint-color);
 }
+.post-image {
+    width: 100%;
+    max-height: 300px;
+    overflow: hidden;
+    background: #f0f0f0;
+}
+
+.post-image img {
+    width: 100%;
+    height: auto;
+    max-height: 300px;
+    object-fit: contain;
+    display: block;
+}
